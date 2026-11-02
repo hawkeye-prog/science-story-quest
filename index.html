@@ -1834,7 +1834,7 @@ class Explore{constructor(){const ch=GW.ch,g=G(),w=wiz();this.L=3000;const r=GFX
   this.bd=GFX.buildBackdrop(ch.biome,ch.time,this.L,Math.max(GW.VW,900),ch.n*17);GA.startMusic("explore");GA.ambience(ch.biome);
   const m=ch.explore.goal.match(/\b(\d+|three|four|five|six|seven|eight)\b/i);this.need=Math.max(3,Math.min(8,m?(+m[1]||NUMW[m[1].toLowerCase()]):5));
   this.p={x:120,y:GFX.GROUND_Y,vx:0,vy:0,ground:true,face:1,walk:0,inv:0,cool:0,cast:0};if(g.hp==null||g.hp<=0)g.hp=w.maxHP;this.hp=Math.min(g.hp,w.maxHP);this.maxHP=w.maxHP;
-  this.plats=[];for(let i=0;i<6;i++){const x=320+i*440+r()*120;this.plats.push({x,y:GFX.GROUND_Y-90-r()*70,w:130+r()*80})}
+  this.plats=[];for(let i=0;i<6;i++){const x=320+i*440+r()*120;this.plats.push({x,y:GFX.GROUND_Y-85-r()*55,w:140+r()*80})}
   this.items=[];const spots=[];for(let i=0;i<this.need+1;i++){const onP=i%2===0&&this.plats[i%6];spots.push(onP?{x:onP.x+onP.w/2,y:onP.y-30}:{x:260+i*(this.L-600)/(this.need+1)+r()*80,y:GFX.GROUND_Y-40})}
   spots.forEach(s=>this.items.push({...s,type:"c",got:false}));this.items.push({x:900+r()*200,y:GFX.GROUND_Y-40,type:"hp",got:false},{x:2200+r()*200,y:this.plats[4].y-30,type:"mp",got:false,px:this.plats[4]});
   this.items[this.items.length-1].x=this.plats[4].x+this.plats[4].w/2;
@@ -1846,14 +1846,16 @@ class Explore{constructor(){const ch=GW.ch,g=G(),w=wiz();this.L=3000;const r=GFX
   document.querySelectorAll(".touch button").forEach(b=>{const k=b.dataset.k;const dn=e=>{e.preventDefault();GW.keys[k]=true;if(k===" "||k==="f")this.key({key:k})};const up=e=>{e.preventDefault();GW.keys[k]=false};
     b.addEventListener("touchstart",dn,{passive:false});b.addEventListener("touchend",up);b.addEventListener("mousedown",dn);b.addEventListener("mouseup",up);b.addEventListener("mouseleave",up)});
   setTimeout(()=>{const h=$("#ehelp");if(h)h.style.opacity=0},7000);this.updHud()}
+  jump(){const p=this.p;p.vy=-780;p.ground=false;p.coyote=0;p.buffer=0;GA.FX.jump()}
   updHud(){const b=$("#ehp");if(b)b.style.width=(this.hp/this.maxHP*100)+"%";const c=$("#ecount");if(c)c.innerHTML=`✨ ${esc(GW.ch.explore.collectible)}: <b>${this.got}/${this.need}</b> · 🧪 ${G().pot.hp} · 🔷 ${G().pot.mp}`}
-  key(e){if(this.paused)return;const k=e.key.toLowerCase();if((k===" "||k==="arrowup"||k==="w")&&this.p.ground){this.p.vy=-610;this.p.ground=false;GA.FX.jump()}
+  key(e){if(this.paused)return;const k=e.key.toLowerCase();if(k===" "||k==="arrowup"||k==="w"){if(this.p.ground||this.p.coyote>0){this.jump()}else this.p.buffer=.15}
     if(k==="f"&&this.p.cool<=0){this.p.cool=.35;this.p.cast=.3;this.shots.push({x:this.p.x+this.p.face*30,y:this.p.y-120,vx:this.p.face*720,life:.9});GA.FX.zap()}}
   update(dt){GFX.updParticles(this.bd,dt,GW.VW);if(this.paused)return;const p=this.p,K=GW.keys;const ax=(K.arrowright||K.d?1:0)-(K.arrowleft||K.a?1:0);
     p.vx+=(ax*300-p.vx)*Math.min(1,dt*10);if(ax)p.face=ax;p.x=Math.max(40,Math.min(this.L-40,p.x+p.vx*dt));p.vy+=1500*dt;const oy=p.y;p.y+=p.vy*dt;
     if(Math.abs(p.vx)>20&&p.ground){p.walk+=dt*Math.abs(p.vx)/120;this.stepT-=dt;if(this.stepT<=0){GA.FX.step();this.stepT=.32}}else p.walk*=.9;
     const wasG=p.ground;p.ground=false;if(p.y>=GFX.GROUND_Y){p.y=GFX.GROUND_Y;p.vy=0;p.ground=true}
-    for(const pl of this.plats){if(p.vy>=0&&oy<=pl.y+2&&p.y>=pl.y&&p.x>pl.x-10&&p.x<pl.x+pl.w+10){p.y=pl.y;p.vy=0;p.ground=true}}if(p.ground&&!wasG)GA.FX.land();
+    for(const pl of this.plats){if(p.vy>=0&&oy<=pl.y+4&&p.y>=pl.y&&p.x>pl.x-14&&p.x<pl.x+pl.w+14){p.y=pl.y;p.vy=0;p.ground=true}}if(p.ground&&!wasG)GA.FX.land();
+    if(p.ground)p.coyote=.12;else p.coyote=Math.max(0,(p.coyote||0)-dt);p.buffer=Math.max(0,(p.buffer||0)-dt);if(p.buffer>0&&p.ground)this.jump();
     p.cool-=dt;p.cast=Math.max(0,p.cast-dt);p.inv=Math.max(0,p.inv-dt);
     /* seal & gate blocking */if(!this.seal.open&&p.x>this.seal.x-50){p.x=this.seal.x-50;p.vx=0;if(!this.seal.busy)this.openSeal()}
     if(!this.gate.open&&p.x>this.gate.x-60){p.x=this.gate.x-60;p.vx=0;if(!this.gate.busy)this.openGate()}
